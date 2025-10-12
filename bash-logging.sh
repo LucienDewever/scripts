@@ -5,11 +5,17 @@ if [ -z "${PERF_LOGGING}" ]; then
 PERF_LOGGING=true
 
 # Determine whether file using this script wants logs in a file as well
-if [ -n "${FILE_LOGGING+x}" ]; then
+if [ "${FILE_LOGGING}" != false ]; then
     # Log directory and name defines
     ROOT_LOG_DIR=/tmp/${SCRIPT_NAME}Logs
     LOG_DATE=$(date +%Y%m%d)
     LOG_FILE=${ROOT_LOG_DIR}/${LOG_DATE}-${SCRIPT_NAME}.log
+
+    # Create the Root log directory if it doesnt already exist
+    if [ ! -d "${ROOT_LOG_DIR}" ]; then
+        mkdir -p "${ROOT_LOG_DIR}"
+        if [ debug ]; then logDebug "Creating '${ROOT_LOG_DIR}' - Status: ${?}"; fi
+    fi
 fi
 
 # Color escape sequences
@@ -35,12 +41,16 @@ function logMessage()
     local output="${color}==== [${level}]: ${msg} ==================${color_Reset}\n"
 
     # Log to console (and file if enabled)
-    if [ -n "${FILE_LOGGING+x}" ]; then
+    if [ "${FILE_LOGGING}" != false ]; then
         printf "$output" | tee -a "${LOG_FILE}"
     else
         printf "${output}"
     fi
 
+}
+
+function logTrace(){
+    logMessage "${@}" "${color_White}" "TRACE"
 }
 
 function logDebug(){
@@ -57,14 +67,6 @@ function logWarning(){
 
 function logError(){
     logMessage "${@}" "${color_Red}" "ERROR"
-}
-
-function makeLogDir(){
-    # Create the Root log directory if it doesnt already exist
-    if [ ! -d "${ROOT_LOG_DIR}" ]; then
-        mkdir -p "${ROOT_LOG_DIR}"
-        if [ debug ]; then logDebug "Creating '${ROOT_LOG_DIR}' - Status: ${?}"; fi
-    fi
 }
 
 # End inclusion check
